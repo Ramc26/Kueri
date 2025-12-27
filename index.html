@@ -1,31 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        
-        <title>Kueri | Natural Language to SQL AI Agent</title>
-        <meta name="description" content="Bridging the gap between natural language and raw data. An intelligent SQL agent powered by LangGraph, FastMCP, and AI to visualize database queries instantly.">
-        <meta name="keywords" content="Text to SQL, AI Agent, LangGraph, MCP, Streamlit, Database Tool, SQL Generator, Python">
-        <meta name="author" content="Ram Bikkina">
-        
-        <meta name="theme-color" content="#0b0f19">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-        <meta property="og:type" content="website">
-        <meta property="og:url" content="https://ramc26.github.io/Kueri/"> <meta property="og:title" content="Kueri | Text-to-SQL AI Agent">
-        <meta property="og:description" content="Stop writing complex joins. Start asking questions. Kueri bridges natural language and raw data using LangGraph & MCP.">
-        <meta property="og:image" content="Logos/LogoLand.png"> <meta property="twitter:card" content="summary_large_image">
-        <meta property="twitter:url" content="https://ramc26.github.io/Kueri/"> <meta property="twitter:title" content="Kueri | Text-to-SQL AI Agent">
-        <meta property="twitter:description" content="Stop writing complex joins. Start asking questions. Kueri bridges natural language and raw data using LangGraph & MCP.">
-        <meta property="twitter:image" content="Logos/LogoLand.png">
+    <title>Kueri | Natural Language to SQL AI Agent</title>
+    <meta name="description" content="Bridging the gap between natural language and raw data. An intelligent SQL agent powered by LangGraph, FastMCP, and AI to visualize database queries instantly.">
     
-        <link rel="icon" type="image/png" href="Logos/LogoFinal.png">
-    
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
-        <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="theme-color" content="#0b0f19">
+    <link rel="icon" type="image/png" href="Logos/LogoFinal.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -60,7 +49,46 @@
         html { scroll-behavior: smooth; }
         body { background-color: #0b0f19; color: #cbd5e1; overflow-x: hidden; margin: 0; }
 
-        /* Scrollbars */
+        /* --- CUSTOM CURSOR STYLES --- */
+        /* Hide default cursor on desktop */
+        @media (min-width: 769px) {
+            * { cursor: none !important; }
+        }
+
+        #cursor-dot {
+            width: 8px; height: 8px; background-color: #EAAA00; border-radius: 50%;
+            position: fixed; top: 0; left: 0; z-index: 10001; pointer-events: none;
+            transform: translate(-50%, -50%); box-shadow: 0 0 10px rgba(234, 170, 0, 0.5);
+        }
+
+        #cursor-ring {
+            width: 40px; height: 40px; border: 1px dashed rgba(234, 170, 0, 0.6); border-radius: 50%;
+            position: fixed; top: 0; left: 0; z-index: 10000; pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s;
+            animation: rotateRing 8s linear infinite;
+        }
+
+        body.hovering #cursor-ring {
+            width: 60px; height: 60px; border-color: rgba(234, 170, 0, 0.3);
+            background-color: rgba(234, 170, 0, 0.05); border-style: solid;
+        }
+
+        body.clicking #cursor-ring {
+            width: 30px; height: 30px; background-color: rgba(234, 170, 0, 0.3);
+        }
+
+        @keyframes rotateRing {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Mobile: Hide custom, show default */
+        @media (max-width: 768px) {
+            #cursor-dot, #cursor-ring { display: none; }
+        }
+
+        /* --- Existing Styles --- */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0b0f19; }
         ::-webkit-scrollbar-thumb { background: #2A3241; border-radius: 5px; }
@@ -70,37 +98,28 @@
         .terminal-scroll::-webkit-scrollbar-track { background: #0d1117; }
         .terminal-scroll::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
 
-        /* Glassmorphism */
         .nav-glass {
-            background: rgba(11, 15, 25, 0.85);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
         }
 
         .card-glass {
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
         }
         .card-glass:hover {
-            border-color: rgba(234, 170, 0, 0.3);
-            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(234, 170, 0, 0.3); background: rgba(255, 255, 255, 0.04);
             transform: translateY(-5px);
         }
 
-        /* Utilities */
-        .cursor {
+        .cursor { /* This is for the terminal typing, not the mouse */
             display: inline-block; width: 8px; height: 18px; background-color: #EAAA00;
             animation: blink 1s step-end infinite; vertical-align: middle; margin-left: 2px;
         }
         @keyframes blink { 50% { opacity: 0; } }
 
-        .fade-in-section {
-            opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease-out, transform 0.8s ease-out;
-        }
+        .fade-in-section { opacity: 0; transform: translateY(20px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
         .fade-in-section.is-visible { opacity: 1; transform: translateY(0); }
 
         /* Flow Animations */
@@ -128,6 +147,9 @@
 </head>
 <body class="antialiased selection:bg-brand-gold selection:text-brand-dark">
 
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+
     <canvas id="data-stream" class="fixed inset-0 w-full h-full z-[1000] pointer-events-none"></canvas>
     
     <div class="fixed inset-0 bg-gradient-to-t from-[#0b0f19] via-transparent to-transparent z-0 pointer-events-none"></div>
@@ -138,13 +160,11 @@
                 <img src="Logos/LogoFinal.png" alt="Kueri Icon" class="h-5 md:h-6 w-auto">
                 <span class="font-mono text-[10px] md:text-xs text-gray-200 tracking-[0.2em] font-bold">KUERI</span>
             </div>
-            
             <div class="hidden md:flex gap-8 text-xs font-mono text-gray-400">
                 <a href="#demo" class="hover:text-brand-gold transition-colors">DEMO</a>
                 <a href="#architecture" class="hover:text-brand-gold transition-colors">SYSTEM</a>
                 <a href="#roadmap" class="hover:text-brand-gold transition-colors">V2</a>
             </div>
-
             <a href="https://github.com/RamC26" target="_blank" aria-label="View on GitHub" class="flex items-center gap-2 text-[10px] md:text-xs font-mono text-brand-dark bg-brand-gold px-3 md:px-4 py-1.5 rounded-full hover:bg-white transition-colors font-bold">
                 <span>GITHUB</span>
             </a>
@@ -182,6 +202,10 @@
                 <h2 class="text-2xl md:text-3xl font-light text-white tracking-tight">System Architecture</h2>
                 <div class="h-1 w-16 bg-brand-gold mx-auto mt-4 rounded-full opacity-80"></div>
                 <p class="mt-4 text-xs font-mono text-gray-500">DATA FLOW PIPELINE</p>
+                
+
+[Image of Data Pipeline Architecture]
+
             </div>
 
             <div class="relative fade-in-section flex flex-col md:flex-row items-center justify-center">
@@ -562,6 +586,54 @@
             }
         }
         runTerminal();
+        // 4. Custom Cursor Logic (Integrated with ring lag)
+        const cursorDot = document.getElementById('cursor-dot');
+        const cursorRing = document.getElementById('cursor-ring');
+        let cursorMouseX = -100;
+        let cursorMouseY = -100;
+        let ringX = -100;
+        let ringY = -100;
+
+        window.addEventListener('mousemove', (e) => {
+            cursorMouseX = e.clientX;
+            cursorMouseY = e.clientY;
+            
+            // Dot follows instantly
+            if(cursorDot) {
+                cursorDot.style.left = `${cursorMouseX}px`;
+                cursorDot.style.top = `${cursorMouseY}px`;
+            }
+        });
+
+        function animateCursor() {
+            // Lerp ring for lag effect
+            ringX += (cursorMouseX - ringX) * 0.15;
+            ringY += (cursorMouseY - ringY) * 0.15;
+            
+            if(cursorRing) {
+                cursorRing.style.left = `${ringX}px`;
+                cursorRing.style.top = `${ringY}px`;
+            }
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        // Cursor Hover Effects
+        const interactables = document.querySelectorAll('a, button, .nav-glass, .card-glass');
+        interactables.forEach(el => {
+            el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+
+        // Cursor Click Effects
+        window.addEventListener('mousedown', () => {
+            document.body.classList.add('clicking');
+            if(cursorDot) cursorDot.style.transform = "translate(-50%, -50%) scale(0.8)";
+        });
+        window.addEventListener('mouseup', () => {
+            document.body.classList.remove('clicking');
+            if(cursorDot) cursorDot.style.transform = "translate(-50%, -50%) scale(1)";
+        });
     </script>
 </body>
 </html>
