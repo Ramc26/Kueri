@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "db_key": "your_db_key",
+    "name": "Your Database Name",
+    "description": "Brief description of what this database contains",
+    "tables": {
+      "table1": "Description of table1",
+      "table2": "Description of table2"
+    }
+  },
+  "config": {
+    "type": "postgresql",
+    "host": "localhost",
+    "port": 5432,
+    "database": "your_database_name",
+    "user": "your_username",
+    "password": "${YOUR_DB_PASSWORD}",
+    "ssl": false
+  }
+}
+

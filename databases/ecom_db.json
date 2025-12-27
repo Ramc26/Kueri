@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "db_key": "ecom_db",
+    "name": "E-Commerce Database",
+    "description": "E-commerce data: orders, products, customers, inventory, and sales.",
+    "tables": {
+      "users": "Customer/user information",
+      "products": "Product catalog",
+      "orders": "Order information"
+    }
+  },
+  "config": {
+    "type": "postgresql",
+    "host": "localhost",
+    "port": 5432,
+    "database": "ecom_db",
+    "user": "itsmeramc",
+    "password": "",
+    "ssl": false
+  }
+}

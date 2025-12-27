@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "db_key": "project_db",
+    "name": "Project Management Database",
+    "description": "Project management data: employees, projects, tasks, and assignments.",
+    "tables": {
+      "employees": "Employee information",
+      "projects": "Project information",
+      "tasks": "Task details"
+    }
+  },
+  "config": {
+    "type": "postgresql",
+    "host": "localhost",
+    "port": 5432,
+    "database": "project_db",
+    "user": "itsmeramc",
+    "password": "",
+    "ssl": false
+  }
+}

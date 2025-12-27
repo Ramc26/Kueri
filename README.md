@@ -1,111 +1,107 @@
-# Kueri - Text2SQL Chat Interface 🦉
+![Kueri Logo](Logos/LogoLand.png)
 
-Ever wondered if you could just ask your database questions in plain English? Well, wonder no more! Kueri is a smart chat interface that turns your natural language questions into SQL queries and gets you the answers you need.
+# 🦉 Kueri: Because Writing SQL is Hard.
 
-## How It Works (The Fun Part)
+Welcome to **Kueri**. It's a Text2SQL interface for people who have better things to do than remember if it's `LEFT JOIN` or `RIGHT JOIN`.
 
-Let's break down how this whole thing comes together, piece by piece:
+I started this project, ignored it for a century, and finally resurrected it. It’s alive! (And it actually works).
 
-### The Big Picture
+---
 
-You type a question → The AI agent figures out what you want → It explores your database → Generates SQL → Runs it → Shows you the results. Simple, right? Well, there's a bit more happening behind the scenes...
+## 🛠️ The Architecture (The "How it works" Bit)
 
-### 1. The Database Config (`db_config.json`) - Your Database's ID Card
+| Component | What it thinks it is | What it actually is |
+| --- | --- | --- |
+| **`db_config.json`** | The Master Config | Shared settings and guidelines that apply to all databases. |
+| **`databases/*.json`** | Individual DB Configs | One JSON file per database. Add/remove databases by adding/removing files. |
+| **`server.py`** | MCP Server | An overpriced waiter (the middleman). |
+| **`tools/`** | Specialized Workers | A hammer, a flashlight, and a magnifying glass. |
+| **`agent.py`** | The "Brain" | LangGraph + GPT having a conversation with your data. |
+| **`app.py`** | The UI | A pretty Streamlit face for messy code. |
 
-Think of `db_config.json` as a cheat sheet that tells the system everything it needs to know about your databases. It's like a menu at a restaurant, but instead of food, it lists:
+---
 
-- **What each database contains**: Is it e-commerce stuff? Project management? Employee data?
-- **Keywords**: Words that help the system figure out which database to use when you ask a question
-- **Table descriptions**: What each table actually holds (so the AI doesn't have to guess)
-- **Common queries**: Examples of what people usually ask
+## 🧐 The Breakdown
 
-Why does this matter? Well, imagine you have multiple databases. When you ask "Show me all pending orders," the system needs to know:
-- Which database has "orders"?
-- What does "pending" mean in that context?
-- What tables should it look at?
+### 1. `db_config.json` + `databases/*.json` — The Modular Cheat Sheet
 
-The config file answers all these questions upfront, making the AI's job way easier.
+**`db_config.json`** contains shared settings that apply to all databases:
+* **Selection Guidelines:** How the AI should choose which database to use
+* **Default Settings:** Global settings like query timeouts, logging, etc.
 
-### 2. The Server (`server.py`) - The Middleman
+**`databases/*.json`** — Each database gets its own file! This is the modular part:
+* **Add a database:** Just drop a new JSON file in `databases/` folder
+* **Remove a database:** Delete the JSON file
+* **No editing the main config:** Each DB is self-contained
 
-`server.py` is like a helpful waiter in a restaurant. You don't talk directly to the kitchen (your databases), you talk to the waiter, and they handle everything.
+Each database JSON file contains:
+* **Bio:** What is this DB for? (Sales? Employees? Secrets?)
+* **Interests:** Keywords to help the AI find it.
+* **Inside Info:** Table descriptions so the AI doesn't have to guess.
+* **Standard Orders:** Example queries for when the AI feels uninspired.
+* **Environment Key:** Which env variable holds the connection string.
 
-Here's what it does:
+### 2. `server.py` — The Waiter
 
-- **Runs an MCP (Model Context Protocol) server**: This is basically a standardized way for AI agents to talk to tools
-- **Exposes database tools**: It makes three main tools available:
-  - `list_tables`: "Hey, what tables do you have?"
-  - `get_table_schema`: "What columns are in this table?"
-  - `run_sql_query`: "Run this SQL query and give me the results"
-- **Handles HTTP requests**: The agent talks to the server via HTTP, and the server translates those requests into actual database operations
+This runs the **Model Context Protocol (MCP)**.
 
-Think of it as a translator between the AI agent (who speaks "tool language") and your databases (who speak "SQL"). Without the server, they'd be talking past each other.
+* It stands between the AI and your precious data.
+* The AI says: "I want to see tables."
+* The Waiter says: "Hold on, let me check the kitchen."
+* It makes sure the AI doesn't try to order something that isn't on the menu.
 
-### 3. The Tools (`tools/db_tools.py`) - The Actual Workers
+### 3. `tools/db_tools.py` — The Muscle
 
-These are the functions that actually do the heavy lifting. Each tool is a simple, focused function:
+Actual Python functions doing the dirty work:
 
-- **`list_tables(db_key)`**: Connects to a database and lists all its tables. Simple, but essential for the AI to know what's available.
-- **`get_table_schema(db_key, table_name)`**: Gets the structure of a specific table - column names, data types, etc. The AI needs this to write correct SQL.
-- **`run_sql_query(db_key, query)`**: The big one. Takes a SQL query string, runs it against the database, and returns the results.
+* `list_tables`: "What’s in the box?"
+* `get_table_schema`: "How is the box organized?"
+* `run_sql_query`: "Actually open the box and get the data."
 
-These tools are registered with the server (via `register_tools.py`), which makes them available to the AI agent. It's like giving the AI a toolbox with exactly the right tools for database work.
+### 4. `agent.py` — The "Genius" 🧠
 
-### 4. The Agent (`agent.py`) - The Brain
+Powered by **LangGraph** and **OpenAI**.
 
-This is where the magic happens. The agent is built using LangGraph and OpenAI's GPT models. Here's its workflow:
+1. **Hears your question.** (e.g., *"Who bought the most coffee?"*)
+2. **Panics slightly.** 3.  **Checks the config.** (Finds the 'Sales' DB).
+3. **Checks the tables.** (Finds 'Customers' and 'Orders').
+4. **Writes SQL.** (Praying it works).
+5. **Runs it.** 7.  **Acts like it knew the answer all along.**
 
-1. **You ask a question** in the Streamlit app
-2. **The agent receives it** and thinks: "What does this person want?"
-3. **It uses the tools** to explore the database:
-   - First, it might list tables to see what's available
-   - Then it checks the schema of relevant tables
-   - Finally, it constructs a SQL query based on what it learned
-4. **It executes the query** using the `run_sql_query` tool
-5. **It formats the results** and sends them back to you
+### 5. `app.py` — The Pretty Face 💅
 
-The cool part? The agent is smart enough to:
-- Figure out which database to use (with help from the config)
-- Explore the schema before writing queries (so it doesn't make mistakes)
-- Handle follow-up questions in a conversation
-- Show you the SQL it generated (so you can verify it's correct)
+A **Streamlit** interface that keeps things simple:
 
-### 5. The Chat Interface (`app.py`) - The Face
+* Chat like you're talking to a human.
+* Sneak a peek at the SQL (if you don't trust the AI).
+* Watch your data come back without touching a semicolon.
 
-This is what you actually see and interact with. It's a Streamlit app that:
+---
 
-- Provides a chat interface (like ChatGPT, but for databases)
-- Lets you select which database to query
-- Shows your conversation history
-- Displays the SQL queries the agent generated (in a collapsible section)
-- Handles all the async stuff so everything runs smoothly
+## 🔄 The Flow (In Simple English)
 
-### The Flow (Step by Step)
+1. **You:** "Who are my top 5 customers?"
+2. **Kueri:** *Consults the ancient scrolls (JSON config).*
+3. **Kueri:** *Asks the waiter (MCP) for the table list.*
+4. **Kueri:** *Writes a SQL query that would take you 10 minutes to type.*
+5. **Kueri:** *Executes it and shows you a table.*
+6. **You:** *Look smart in front of your boss.*
 
-1. **You type**: "Show me all pending orders"
-2. **Streamlit app** sends this to the agent
-3. **Agent** checks `db_config.json` to figure out which database has "orders"
-4. **Agent** calls `list_tables` tool via the server to see what tables exist
-5. **Agent** calls `get_table_schema` to understand the orders table structure
-6. **Agent** generates SQL: `SELECT * FROM orders WHERE status = 'pending'`
-7. **Agent** calls `run_sql_query` to execute it
-8. **Results come back** through the server, to the agent, to the app, and finally to you
-9. **You see** both the results AND the SQL query (so you know exactly what happened)
+---
 
-### Why This Architecture?
+## 🏆 Why use Kueri?
 
-- **Separation of concerns**: Each piece has one job and does it well
-- **Flexibility**: Want to add a new database? Just update the config. New tool? Add it to `db_tools.py`
-- **Safety**: The server acts as a gatekeeper, so the agent can only do what the tools allow
-- **Transparency**: You can see exactly what SQL was generated, so you're never in the dark
+* **Zero SQL Knowledge Needed:** Great for managers.
+* **Safety First:** The AI only sees what the tools show it.
+* **Lazy Friendly:** Just update the JSON and you're done.
+* **Resurrection Proof:** Even if you leave it for 100 years, it still works.
 
-## In Summary
+---
 
-Kueri is basically a smart translator that:
-- Understands your questions (thanks to GPT)
-- Knows about your databases (thanks to `db_config.json`)
-- Can explore and query them safely (thanks to the server and tools)
-- Shows you everything it does (thanks to the chat interface)
+> **Note:** No databases were harmed in the making of this app. Only my sleep schedule.
 
-It's like having a database expert who never sleeps, never gets tired, and always shows their work. Pretty neat, right? 🦉
+---
 
+<div style="text-align: center; color: #888;">
+Resurrected from the "I'll finish this later" folder after 100 years by <a href='[https://ramc26.github.io/RamTechSuite](https://ramc26.github.io/RamTechSuite)' target='_blank' style='color: #EAAA00; text-decoration: none;'>🦉 <strong>RamBikkina</strong></a>
+</div>

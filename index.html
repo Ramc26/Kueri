@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Kueri | Natural Language to SQL AI Agent</title>
+    <meta name="description" content="Bridging the gap between natural language and raw data. An intelligent SQL agent powered by LangGraph, FastMCP, and AI to visualize database queries instantly.">
+    <meta name="keywords" content="Text to SQL, AI Agent, LangGraph, MCP, Streamlit, Database Tool, SQL Generator, Python">
+    <meta name="author" content="Ram Bikkina">
+    
+    <meta name="theme-color" content="#0b0f19">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ramc26.github.io/Kueri/"> <meta property="og:title" content="Kueri | Text-to-SQL AI Agent">
+    <meta property="og:description" content="Stop writing complex joins. Start asking questions. Kueri bridges natural language and raw data using LangGraph & MCP.">
+    <meta property="og:image" content="Logos/LogoLand.png"> <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://ramc26.github.io/Kueri/"> <meta property="twitter:title" content="Kueri | Text-to-SQL AI Agent">
+    <meta property="twitter:description" content="Stop writing complex joins. Start asking questions. Kueri bridges natural language and raw data using LangGraph & MCP.">
+    <meta property="twitter:image" content="Logos/LogoLand.png">
+
+    <link rel="icon" type="image/png" href="Logos/LogoFinal.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            gold: '#EAAA00',
+                            dark: '#0b0f19',     /* Deep Gunmetal */
+                            card: '#131926',     /* Lighter card bg */
+                            border: '#2A3241'    /* Soft border */
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Smooth Native Scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #0b0f19;
+            color: #cbd5e1;
+            overflow-x: hidden;
+            margin: 0;
+        }
+
+        /* --- Scrollbars --- */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2A3241;
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #EAAA00;
+        }
+
+        .terminal-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .terminal-scroll::-webkit-scrollbar-track {
+            background: #0d1117;
+        }
+        .terminal-scroll::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        /* --- Glassmorphism --- */
+        .nav-glass {
+            background: rgba(11, 15, 25, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-glass {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .card-glass:hover {
+            border-color: rgba(234, 170, 0, 0.3);
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateY(-5px);
+        }
+
+        /* --- Utilities --- */
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 18px;
+            background-color: #EAAA00;
+            animation: blink 1s step-end infinite;
+            vertical-align: middle;
+            margin-left: 2px;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        .fade-in-section.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-brand-gold selection:text-brand-dark">
+
+    <canvas id="data-stream" class="fixed inset-0 w-full h-full z-0 pointer-events-none opacity-40"></canvas>
+    
+    <div class="fixed inset-0 bg-gradient-to-t from-[#0b0f19] via-transparent to-transparent z-0 pointer-events-none"></div>
+
+    <div class="fixed top-6 left-0 right-0 z-50 flex justify-center w-full pointer-events-none px-4">
+        <nav class="nav-glass rounded-full px-8 py-3 flex items-center justify-between gap-12 pointer-events-auto transition-transform hover:scale-[1.01]" aria-label="Main Navigation">
+            <div class="flex items-center gap-3">
+                <img src="Logos/LogoFinal.png" alt="Kueri Icon" class="h-6 w-auto">
+                <span class="font-mono text-xs text-gray-200 tracking-[0.2em] font-bold">KUERI</span>
+            </div>
+            
+            <div class="hidden md:flex gap-8 text-xs font-mono text-gray-400">
+                <a href="#demo" class="hover:text-brand-gold transition-colors">DEMO</a>
+                <a href="#architecture" class="hover:text-brand-gold transition-colors">SYSTEM</a>
+                <a href="#roadmap" class="hover:text-brand-gold transition-colors">V2</a>
+            </div>
+
+            <a href="https://github.com/RamC26" target="_blank" aria-label="View on GitHub" class="flex items-center gap-2 text-xs font-mono text-brand-dark bg-brand-gold px-4 py-1.5 rounded-full hover:bg-white transition-colors font-bold">
+                <span>GITHUB</span>
+            </a>
+        </nav>
+    </div>
+
+    <header class="relative z-10 min-h-screen flex flex-col justify-center items-center text-center px-4 pt-16">
+        <div class="fade-in-section mb-10 animate-float">
+            <img src="Logos/LogoLand.png" alt="Kueri Large Logo" class="h-24 md:h-32 w-auto mx-auto drop-shadow-[0_0_60px_rgba(234,170,0,0.2)]">
+        </div>
+
+        <h1 class="font-sans font-medium text-4xl md:text-7xl mb-6 tracking-tight leading-[1.1] fade-in-section max-w-5xl text-white">
+            Bridging the gap between <br>
+            <span class="font-bold text-gray-200">natural language</span> & <span class="text-brand-gold">raw data.</span>
+        </h1>
+
+        <p class="text-gray-400 max-w-xl mb-12 fade-in-section text-lg font-light leading-relaxed">
+            An intelligent SQL agent powered by <strong>LangGraph</strong> & <strong>MCP</strong>. 
+            <br>It speaks database so you don't have to.
+        </p>
+
+        <div class="flex flex-col md:flex-row gap-5 fade-in-section">
+            <a href="#demo" class="px-8 py-3.5 bg-brand-gold text-brand-dark font-bold rounded-lg hover:bg-white transition-all shadow-[0_0_25px_rgba(234,170,0,0.3)]">
+                Try Live Terminal
+            </a>
+            <a href="#architecture" class="px-8 py-3.5 card-glass text-gray-300 rounded-lg hover:bg-white/5 transition-colors border border-brand-border">
+                See How It Works
+            </a>
+        </div>
+    </header>
+
+    <section id="architecture" class="relative z-10 py-32 px-4 bg-[#0d121c]/60 border-y border-brand-border/50">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-20 fade-in-section">
+                <h2 class="text-3xl font-light text-white tracking-tight">System Architecture</h2>
+                <div class="h-1 w-16 bg-brand-gold mx-auto mt-4 rounded-full opacity-80"></div>
+            </div>
+
+            <div class="relative fade-in-section">
+                <div class="hidden md:block absolute top-1/2 left-4 w-[98%] h-[2px] bg-gradient-to-r from-transparent via-brand-border to-transparent -z-10"></div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8 items-center">
+                    <div class="card-glass p-8 rounded-2xl text-center h-full">
+                        <div class="text-4xl mb-5 opacity-80">👤</div>
+                        <h3 class="font-bold text-white text-lg mb-2">Streamlit UI</h3>
+                        <p class="text-xs text-gray-500 font-mono leading-relaxed">Front-end visualization layer.</p>
+                    </div>
+                    <div class="card-glass p-8 rounded-2xl text-center bg-brand-card h-full relative group">
+                        <span class="absolute -top-1.5 -right-1.5 flex h-4 w-4">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-gold opacity-50"></span>
+                          <span class="relative inline-flex rounded-full h-4 w-4 bg-brand-gold"></span>
+                        </span>
+                        <div class="text-4xl mb-5">🧠</div>
+                        <h3 class="font-bold text-brand-gold text-lg mb-2">Agentic AI</h3>
+                        <p class="text-xs text-gray-500 font-mono leading-relaxed">LangGraph reasoning engine.</p>
+                    </div>
+                    <div class="card-glass p-8 rounded-2xl text-center h-full">
+                        <div class="text-4xl mb-5 opacity-80">🔌</div>
+                        <h3 class="font-bold text-white text-lg mb-2">MCP Tools</h3>
+                        <p class="text-xs text-gray-500 font-mono leading-relaxed">FastMCP protocol bridge.</p>
+                    </div>
+                    <div class="card-glass p-8 rounded-2xl text-left pl-10 h-full flex flex-col justify-center">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-2.5 h-2.5 bg-green-500 rounded-full"></span>
+                            <span class="text-sm text-gray-300 font-mono">E-Commerce</span>
+                        </div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="w-2.5 h-2.5 bg-blue-500 rounded-full"></span>
+                            <span class="text-sm text-gray-300 font-mono">Projects</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                            <span class="text-sm text-gray-300 font-mono">HR Records</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo" class="relative z-10 py-32 px-4">
+        <div class="max-w-4xl mx-auto fade-in-section">
+            <div class="flex justify-between items-end mb-4 px-1">
+                <h2 class="text-xl font-light text-gray-300">Interactive Terminal</h2>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-brand-gold animate-pulse"></span>
+                    <span class="text-xs font-mono text-brand-gold">LIVE SESSION</span>
+                </div>
+            </div>
+
+            <div class="rounded-xl overflow-hidden shadow-2xl border border-brand-border bg-[#0d1117] relative">
+                <div class="bg-[#161b22] px-4 py-3 flex items-center gap-2 border-b border-brand-border">
+                    <div class="flex gap-2">
+                        <div class="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
+                        <div class="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
+                        <div class="w-3 h-3 rounded-full bg-[#27C93F]"></div>
+                    </div>
+                    <div class="ml-4 text-xs text-gray-500 font-mono flex-1 text-center pr-12 opacity-60">kueri — zsh — 80x24</div>
+                </div>
+                <div id="terminal-window" class="p-6 font-mono text-xs md:text-sm text-gray-300 h-[400px] overflow-y-auto terminal-scroll relative">
+                    <div class="text-gray-500 mb-1">> system init... <span class="text-green-500">OK</span></div>
+                    <div class="text-gray-500 mb-4">> connecting to db_shard_01... <span class="text-green-500">connected</span></div>
+                    <div id="terminal-content"></div>
+                    <div class="flex mt-2" id="input-line">
+                        <span class="text-brand-gold mr-3 shrink-0">user@kueri:~$</span>
+                        <span id="typewriter" class="text-gray-100 font-bold"></span><span class="cursor"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="roadmap" class="relative z-10 py-32 px-4 bg-brand-dark border-t border-brand-border/30">
+        <div class="max-w-5xl mx-auto">
+            <div class="text-center mb-16 fade-in-section">
+                <h2 class="text-2xl font-light text-white">Possible V2 Features</h2>
+                <p class="text-xs text-gray-500 font-mono mt-2 uppercase tracking-widest">Future Roadmap</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 fade-in-section">
+                <div class="card-glass p-6 rounded-xl flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold mb-1">Visual Data Mode</h3>
+                        <p class="text-xs text-gray-500 leading-relaxed">Automatically generate charts, graphs, and trends from SQL results directly in the UI.</p>
+                    </div>
+                </div>
+                <div class="card-glass p-6 rounded-xl flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold mb-1">Multi-Turn Context</h3>
+                        <p class="text-xs text-gray-500 leading-relaxed">Agentic memory to handle follow-up questions like "Now filter that list by region" without restating context.</p>
+                    </div>
+                </div>
+                <div class="card-glass p-6 rounded-xl flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center text-green-400 shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold mb-1">NoSQL & Vector Support</h3>
+                        <p class="text-xs text-gray-500 leading-relaxed">Query MongoDB, Redis, and Vector DBs for semantic search capabilities.</p>
+                    </div>
+                </div>
+                <div class="card-glass p-6 rounded-xl flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-lg bg-brand-gold/10 flex items-center justify-center text-brand-gold shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-white font-bold mb-1">Voice Interface</h3>
+                        <p class="text-xs text-gray-500 leading-relaxed">Audio-to-SQL pipeline allowing hands-free database querying and result summaries.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="relative z-10 py-8 border-t border-brand-border bg-[#090c13]">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            
+            <div class="flex flex-col items-center md:items-start gap-1">
+                <div class="flex items-center gap-2 opacity-90 hover:opacity-100 transition-opacity">
+                    <img src="Logos/LogoFinal.png" alt="Footer Icon" class="h-5 w-auto grayscale hover:grayscale-0 transition-all">
+                    <span class="text-sm font-bold text-gray-300 tracking-wider">KUERI</span>
+                </div>
+                <div class="text-[10px] text-gray-600 font-mono">
+                    © 2025 <a href="https://ramc26.github.io/RamTechSuite" target="_blank" rel="noopener noreferrer" class="hover:text-brand-gold transition-colors">RAM BIKKINA</a>.
+                </div>
+            </div>
+
+            <div class="text-center md:text-right">
+                <p class="text-xs text-gray-500 italic mb-3">
+                    "Coding tools no one asked for, just to make life easier."
+                </p>
+                <div class="flex gap-6 justify-center md:justify-end text-[10px] font-mono text-gray-500">
+                    <a href="https://github.com/Ramc26/Kueri" target="_blank" class="hover:text-brand-gold transition-colors">GITHUB</a>
+                    <a href="https://github.com/Ramc26/Kueri?tab=readme-ov-file#kueri---text2sql-chat-interface-" target="_blank" class="hover:text-brand-gold transition-colors">DOCUMENTATION</a>
+                </div>
+            </div>
+
+        </div>
+    </footer>
+
+    <script>
+        // 1. Fade-In Observer
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in-section').forEach(el => observer.observe(el));
+
+        // 2. Custom Data Stream Background
+        const canvas = document.getElementById('data-stream');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        const symbols = ['SELECT', 'FROM', 'WHERE', 'JOIN', '*', '{ }', ';', 'LIMIT', '1', '0', '[]', 'GROUP BY'];
+        let particles = [];
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class TextParticle {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * height;
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = height + 50;
+                this.text = symbols[Math.floor(Math.random() * symbols.length)];
+                this.speed = Math.random() * 0.5 + 0.2;
+                this.size = Math.random() * 10 + 10;
+                this.opacity = Math.random() * 0.3 + 0.1;
+            }
+            update() {
+                this.y -= this.speed;
+                if (this.y < -50) this.reset();
+            }
+            draw() {
+                ctx.font = `${this.size}px 'JetBrains Mono', monospace`;
+                ctx.fillStyle = `rgba(234, 170, 0, ${this.opacity})`;
+                ctx.fillText(this.text, this.x, this.y);
+            }
+        }
+        for (let i = 0; i < 40; i++) particles.push(new TextParticle());
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // 3. Terminal Logic
+        const terminalWindow = document.getElementById("terminal-window");
+        const contentElem = document.getElementById("terminal-content");
+        const typewriterElem = document.getElementById("typewriter");
+        const scenarios = [
+            {
+                input: "Show total revenue by region for Q3 2024",
+                logs: ["Checking intent: 'Sales Analytics'", "Scanning schema: orders, regions", "Generating SQL..."],
+                sql: "SELECT r.name, SUM(o.amount) FROM orders o JOIN regions r ON o.region_id = r.id WHERE date BETWEEN '2024-07-01' AND '2024-09-30' GROUP BY r.name;",
+                result: "REGION        REVENUE\n------------------------\nNorth America  $1.2M\nEurope         $840K"
+            },
+            {
+                input: "Which projects have pending critical tasks?",
+                logs: ["Checking intent: 'Project Mgmt'", "Scanning schema: projects, tasks", "Filtering priority='critical'..."],
+                sql: "SELECT p.name, COUNT(t.id) FROM projects p JOIN tasks t ON p.id = t.project_id WHERE t.status='pending' AND t.priority='critical' GROUP BY p.name;",
+                result: "1. Website Redesign (3 tasks)\n2. Mobile App V2 (5 tasks)"
+            }
+        ];
+        let sIdx = 0;
+
+        async function typeText(text) {
+            typewriterElem.innerHTML = "";
+            for (let char of text) {
+                typewriterElem.innerHTML += char;
+                terminalWindow.scrollTop = terminalWindow.scrollHeight;
+                await new Promise(r => setTimeout(r, 40)); 
+            }
+            await new Promise(r => setTimeout(r, 400));
+        }
+
+        async function addLine(html, classes = "mb-1") {
+            const div = document.createElement("div");
+            div.className = classes;
+            div.innerHTML = html;
+            contentElem.appendChild(div);
+            terminalWindow.scrollTop = terminalWindow.scrollHeight;
+        }
+
+        async function runTerminal() {
+            while(true) {
+                const s = scenarios[sIdx];
+                await typeText(s.input);
+                await addLine(`<span class="text-brand-gold mr-3">user@kueri:~$</span>${s.input}`, "mb-2");
+                typewriterElem.innerHTML = ""; 
+                for(let log of s.logs) {
+                    await new Promise(r => setTimeout(r, 300));
+                    await addLine(`> ${log}`, "text-gray-500 text-xs");
+                }
+                await new Promise(r => setTimeout(r, 500));
+                await addLine(s.sql, "text-blue-300 text-xs mt-2 bg-[#131926] p-2 rounded border-l-2 border-blue-500 border border-gray-800");
+                await new Promise(r => setTimeout(r, 800));
+                await addLine(s.result, "text-green-400 text-xs mt-2 mb-6 font-bold whitespace-pre");
+                await new Promise(r => setTimeout(r, 2000));
+                sIdx = (sIdx + 1) % scenarios.length;
+            }
+        }
+        runTerminal();
+    </script>
+</body>
+</html>

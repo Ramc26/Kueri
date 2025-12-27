@@ -1,44 +1,16 @@
 {
-    "databases": {
-      "ecom_db": {
-        "name": "E-Commerce Database",
-        "description": "This database contains all e-commerce related data including customer orders, products, and user information. Use this database for queries about: orders, order status, order processing, customers, users, products, inventory, stock, pricing, and sales.",
-        "keywords": ["order", "orders", "customer", "user", "product", "inventory", "stock", "price", "sale", "purchase", "processing", "pending", "completed", "cancelled"],
-        "tables": {
-          "users": "Contains customer/user information including names, emails, and registration dates",
-          "products": "Contains product catalog with names, prices, and stock quantities",
-          "orders": "Contains order information including user who placed the order, product ordered, quantity, order status (pending/processing/completed/cancelled), and order dates"
-        },
-        "common_queries": [
-          "How many orders need processing?",
-          "What products are low in stock?",
-          "Who are my recent customers?",
-          "What orders are pending?"
-        ]
-      },
-      "project_db": {
-        "name": "Project Management Database",
-        "description": "This database contains project management and team collaboration data including employees, projects, and tasks. Use this database for queries about: employees, team members, projects, project status, tasks, task assignments, work items, and employee roles.",
-        "keywords": ["employee", "project", "task", "assignment", "team", "work", "developer", "manager", "todo", "in_progress", "done", "active", "completed", "on_hold"],
-        "tables": {
-          "employees": "Contains employee information including names, roles, and email addresses",
-          "projects": "Contains project information with names and status (active/completed/on_hold)",
-          "tasks": "Contains task details including which project they belong to, who they're assigned to, descriptions, and status (todo/in_progress/done)"
-        },
-        "common_queries": [
-          "How many tasks are in progress?",
-          "What projects are active?",
-          "Who is working on what?",
-          "What tasks are assigned to a specific employee?"
-        ]
-      }
-    },
     "selection_guidelines": {
       "step_1": "Read the user's question carefully and identify the main subject/entity being queried",
       "step_2": "Check which database's keywords match the subject in the query",
       "step_3": "If the query mentions 'orders', 'products', 'customers', 'users', or 'sales', use ecom_db",
       "step_4": "If the query mentions 'employees', 'projects', 'tasks', or 'assignments', use project_db",
       "step_5": "When in doubt, check both database schemas and pick the one with relevant tables"
+  },
+  "databases_directory": "databases",
+  "default_settings": {
+    "max_query_timeout": 30,
+    "enable_query_logging": true,
+    "max_results_display": 1000
     }
   }
   

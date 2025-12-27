@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  kueri:
+    build: .
+    container_name: kueri
+    ports:
+      - "8001:8001"  # MCP server
+      - "8501:8501"  # Streamlit app
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      # Mount databases directory for configs
+      - ./databases:/app/databases
+      # Mount .env if you prefer (or use environment variables)
+      - ./.env:/app/.env:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+

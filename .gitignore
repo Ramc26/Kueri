@@ -28,3 +28,7 @@ Thumbs.db
 test.py
 agent2.py
 dummy_data/
+
+# Database configs with credentials (uncomment if storing passwords in JSON)
+# databases/*.json
+Logos/LogoInitial.png
